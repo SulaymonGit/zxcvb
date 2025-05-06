@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <title>Foydalanuvchilarni Saralash</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .controls { display: flex; justify-content: space-between; margin-bottom: 20px; }
+    .users { display: flex; flex-wrap: wrap; gap: 20px; }
+    .card {
+      border: 1px solid #ccc;
+      padding: 15px;
+      border-radius: 10px;
+      width: 250px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .card img { border-radius: 50%; width: 80px; height: 80px; }
+    .loader {
+      text-align: center;
+      font-size: 18px;
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Foydalanuvchilarni Saralash</h1>
+
+  <div class="controls">
+    <select id="sort">
+      <option value="name">Ism bo‘yicha saralash</option>
+      <option value="age">Yosh bo‘yicha saralash</option>
+    </select>
+    <input type="text" id="search" placeholder="Qidirish (ism yoki familiya)">
+  </div>
+
+  <div id="loader" class="loader">Yuklanmoqda...</div>
+  <div id="users" class="users" style="display:none;"></div>
+
+  <script>
+    const usersEl = document.getElementById("users");
+    const loader = document.getElementById("loader");
+    const sortSelect = document.getElementById("sort");
+    const searchInput = document.getElementById("search");
+
+    let users = [];
+
+    // Foydalanuvchilarni yuklash
+    async function fetchUsers() {
+      const res = await fetch("https://randomuser.me/api/?results=12");
+      const data = await res.json();
+      users = data.results;
+      renderUsers();
+      loader.style.display = "none";
+      usersEl.style.display = "flex";
+    }
+
+    function renderUsers() {
+      const query = searchInput.value.toLowerCase();
+      let filtered = users.filter(user => {
+        const fullName = `${user.name.first} ${user.name.last}`.toLowerCase();
+        return fullName.includes(query);
+      });
+
+      const sortBy = sortSelect.value;
+      if (sortBy === "name") {
+        filtered.sort((a, b) => a.name.first.localeCompare(b.name.first));
+      } else if (sortBy === "age") {
+        filtered.sort((a, b) => a.dob.age - b.dob.age);
+      }
+
+      usersEl.innerHTML = filtered.map(user => `
+        <div class="card">
+          <img src="${user.picture.medium}" alt="User">
+          <h3>${user.name.first} ${user.name.last}</h3>
+          <p><strong>Yosh:</strong> ${user.dob.age}</p>
+          <p><strong>Telefon:</strong> ${user.phone}</p>
+          <p><strong>Email:</strong> ${user.email}</p>
+          <p><strong>Manzil:</strong> ${user.location.city}, ${user.location.country}</p>
+        </div>
+      `).join("");
+    }
+
+    sortSelect.addEventListener("change", renderUsers);
+    searchInput.addEventListener("input", renderUsers);
+
+    fetchUsers();
+  </script>
+</body>
+</html>
